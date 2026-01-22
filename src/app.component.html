@@ -1,0 +1,161 @@
+
+<div class="min-h-screen bg-gray-50 flex flex-col items-center py-8 px-4 sm:px-6 lg:px-8">
+  
+  <!-- Header -->
+  <header class="w-full max-w-3xl mb-8 text-center">
+    <div class="inline-flex items-center justify-center p-3 bg-blue-100 rounded-full mb-4">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 3.666A5.976 5.976 0 0115 16H9zM9 7a6 6 0 016 0v3.833h2.047a7.5 7.5 0 01.18 4.516l-2.048-2.18m-4.226-4.226L9 16" />
+      </svg>
+    </div>
+    <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Trợ Lý Tài Chính AI</h1>
+    <p class="mt-2 text-lg text-gray-600">Phân tích dòng tiền & nhận lời khuyên đầu tư thông minh</p>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="w-full max-w-3xl bg-white rounded-2xl shadow-xl overflow-hidden">
+    
+    <!-- Step 1: Input Form -->
+    @if (step() === 'input') {
+      <div class="p-6 sm:p-8">
+        <form [formGroup]="financeForm" (ngSubmit)="analyze()" class="space-y-6">
+          
+          <!-- Month & Income Row -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Thời gian phân tích</label>
+              <input type="month" formControlName="thoi_gian" 
+                class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 border">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Tổng thu nhập (VNĐ)</label>
+              <div class="relative rounded-md shadow-sm">
+                <input type="number" formControlName="tong_thu_nhap" placeholder="Ví dụ: 20000000"
+                  class="w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 py-2 px-3 pl-4 border">
+                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <span class="text-gray-500 sm:text-sm">₫</span>
+                </div>
+              </div>
+              @if (financeForm.get('tong_thu_nhap')?.invalid && financeForm.get('tong_thu_nhap')?.touched) {
+                <p class="mt-1 text-sm text-red-600">Vui lòng nhập thu nhập hợp lệ.</p>
+              }
+            </div>
+          </div>
+
+          <!-- Expenses Section -->
+          <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-medium text-gray-900">Chi tiết chi tiêu</h3>
+              <button type="button" (click)="addExpenseRow()" 
+                class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                + Thêm mục
+              </button>
+            </div>
+
+            <div formArrayName="chi_tiet_chi_tieu" class="space-y-3">
+              @for (expense of expenseArray.controls; track $index) {
+                <div [formGroupName]="$index" class="flex items-start gap-3">
+                  <div class="flex-grow">
+                    <input type="text" formControlName="category" placeholder="Tên mục (vd: Ăn uống)"
+                      class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 border text-sm">
+                  </div>
+                  <div class="w-1/3">
+                    <input type="number" formControlName="amount" placeholder="Số tiền"
+                      class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 border text-sm">
+                  </div>
+                  <button type="button" (click)="removeExpenseRow($index)" 
+                    class="mt-1 p-1 text-gray-400 hover:text-red-500 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              }
+            </div>
+            
+            <div class="mt-4 flex justify-between items-center text-sm font-medium text-gray-700 border-t border-gray-200 pt-2">
+              <span>Tổng chi ước tính:</span>
+              <span>{{ formatCurrency(calculateTotalExpenses()) }} ₫</span>
+            </div>
+          </div>
+
+          <!-- Goals & Investment -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Mục tiêu tiết kiệm (VNĐ hoặc %)</label>
+              <input type="text" formControlName="muc_tieu_tiet_kiem" placeholder="Vd: 20% hoặc 5 triệu"
+                class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 border">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Đầu tư hiện tại (nếu có)</label>
+              <input type="text" formControlName="dau_tu_hien_tai" placeholder="Vd: Vàng, Chứng khoán,..."
+                class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 border">
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="pt-4">
+            <button type="submit" [disabled]="financeForm.invalid"
+              class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+              Phân tích Tài chính
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+
+    <!-- Step 2: Loading State -->
+    @if (step() === 'loading') {
+      <div class="p-12 flex flex-col items-center justify-center text-center space-y-6">
+        <div class="relative w-24 h-24">
+          <div class="absolute top-0 left-0 w-full h-full border-4 border-blue-100 rounded-full animate-pulse"></div>
+          <div class="absolute top-0 left-0 w-full h-full border-t-4 border-blue-600 rounded-full animate-spin"></div>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-gray-900">Đang phân tích dữ liệu...</h3>
+          <p class="text-gray-500 mt-2">Chuyên gia AI đang xem xét dòng tiền của bạn.</p>
+        </div>
+      </div>
+    }
+
+    <!-- Step 3: Result -->
+    @if (step() === 'result') {
+      <div class="bg-white">
+        <!-- Dashboard Header -->
+        <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
+          <h2 class="text-white text-lg font-semibold">Báo cáo Tài chính</h2>
+          <button (click)="reset()" class="text-blue-100 hover:text-white text-sm font-medium">
+            &larr; Phân tích mới
+          </button>
+        </div>
+
+        <div class="p-6 md:p-8 space-y-8">
+          
+          <!-- Visuals -->
+          <div class="bg-gray-50 rounded-xl p-6 border border-gray-100 shadow-inner flex flex-col items-center">
+             <h3 class="text-md font-semibold text-gray-700 mb-4 self-start">Biểu đồ chi tiêu</h3>
+             <app-expense-chart [data]="chartData()" [legendData]="legendData()"></app-expense-chart>
+          </div>
+
+          <!-- AI Content -->
+          <div class="prose prose-blue max-w-none">
+             <app-markdown-renderer [content]="aiResponse()"></app-markdown-renderer>
+          </div>
+
+          <!-- Action Button Footer -->
+          <div class="flex justify-center pt-6 border-t border-gray-100">
+            <button (click)="reset()" 
+              class="inline-flex items-center px-6 py-3 border border-gray-300 shadow-sm text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              Nhập dữ liệu tháng khác
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+  </main>
+
+  <footer class="mt-8 text-center text-gray-500 text-sm">
+    <p>Powered by Google Gemini AI & Angular</p>
+  </footer>
+</div>
